@@ -1,21 +1,23 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-let authPromise = null;
+let authInstance = null;
 
-/** Lấy cấu hình Firebase Web từ server (/firebase-config) rồi khởi tạo một lần. */
+/** Khởi tạo Firebase Web trực tiếp từ biến môi trường VITE_FIREBASE_*. */
 export function initAuth() {
-  if (!authPromise) {
-    authPromise = fetch("/firebase-config")
-      .then((r) => r.json())
-      .then((cfg) => {
-        if (!cfg.apiKey) throw new Error("Server chưa cấu hình Firebase (FIREBASE_API_KEY...).");
-        return getAuth(initializeApp(cfg));
-      })
-      .catch((e) => {
-        authPromise = null;
-        throw e;
-      });
+  if (!authInstance) {
+    const cfg = {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    };
+
+    if (!cfg.apiKey) {
+      throw new Error("Thiếu cấu hình Firebase (VITE_FIREBASE_API_KEY...).");
+    }
+
+    authInstance = getAuth(initializeApp(cfg));
   }
-  return authPromise;
+  return Promise.resolve(authInstance);
 }
